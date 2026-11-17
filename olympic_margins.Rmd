@@ -1,0 +1,750 @@
+---
+title: "Margins of Victory in Olympic Finals"
+author: "Robert Harper"
+subtitle: Deconstructing and reconstructing a published data visualisation
+output:
+  html_document: default
+  pdf_document: default
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+# Hide warnings and messages in the rendered output
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+## Deconstruct
+
+### Original
+
+The original data visualisation is the figure comparing margins of victory between male and female finalists in Joyner et al. (2025), *Evidence on sex differences in sports performance*, Journal of Applied Physiology. It is not reproduced here for copyright reasons; it can be viewed in the article at https://doi.org/10.1152/japplphysiol.00615.2024.
+
+It shows, for the top eight finishers in the men's and women's 800m and 10,000m runs and 100m and 1500m freestyle swims at a single Olympic Games, how far behind the winner each athlete finished, as a percentage of the winning time.
+
+
+### Objective and Audience
+
+The objective and audience of the original data visualisation chosen can be summarised as follows: 
+
+#### Objective ####
+
+**Question:**
+The selected visualisation is aiming to portray and compare the different amount of variance in margin of victory between male and female athletes in Olympic running and swimming finals. The events chosen are the 10,000m and 800m run, and the 100m and 1500m freestyle swim.
+
+**Answer:**
+The visualisation shows that female athletes typically have a wider spread of finish times, compared to men, who appear to be relatively more "bunched up", particularly in the track events. Interestingly, the swim events appear to have similar dispersion of finish times when comparing genders. Additionally, the visualisation highlights the extremely narrow margins of victory at the elite level, most notably in the mens 10,000m
+
+**So what?:**
+Why do mens events seem to have tighter/closer finishes compare to womens events that are more spread out? 
+
+#### Audience ####
+This visualisation is presented in a peer reviewed journal article published by The Journal of Applied Physiology both online and in print. The intended audience of this paper and the visualisation are mainly physiologists and exercise scientists. Additionally, the authors of the paper specifically state that the paper highlights evidence for a framework to consider for policy decisions related to fairness in sport. Therefore members of governing bodies/policy makers and ethics experts may be interested in this paper. On top of that, educators and students in the sports science domain would likely make up another significant cohort of readers. There may also be potential interest from Medical experts, endocrinologists and reproductive experts. Lastly, as sex and gender has recently become somewhat topical, therefore journalists may be interested in reporting on the latest research related to gender differences in sports.
+
+### Improvements
+
+The original data visualisation chosen could be improved in the three following ways:
+
+* **First improvement: **
+The first issue with this visualisation is the repeating values/events on the y-axis. For example, "10,000m Run" is portrayed as the first event and again as the fifth event. The first appearance representing women (in red) and the second representing men (in blue). This makes comparison between males and females in the same event cumbersome and unintuitive. On top of this, the male and female colour encoding is buried in text (in the description) with no legend, adding an additional layer of difficulty to decipher this visualisation. To address this issue, an event will only appear on the y-axis once, and male and female data for that event will be aligned side-by-side with the existing colour encoding (with a legend) for easier comparison.
+
+* **Second improvement: **
+The visualisation only portrays four events at one Olympics. Drawing conclusions about differences between male and female performance in the selected events based on a single Olympic Games is not sufficient for fair or reliable inference. For example, how does the reader know (from the original visualisation) if the mens 10,000m race was an unusually close race, with all participants finishing within a narrow time frame? How do we know if the results seen in the original visualisation are applicable for all Olympic Games? The answer is, we don't know because the cohort is under-powered and may not be representative or transferable to other events. Therefore, by using additional data from the Olympics/World Aquatics websites, I will use faceting to include the finals of 3 other recent Olympics for the events given for the original visualisation. This will provide a more accurate depiction of patterns in the margins of victory in men vs women. 
+
+* **Third improvement: **
+It is relatively common at Olympic events for records to be broken. If a record is broken, this is potentially pertinent information to understand the spread of the top 8 athletes for a particular event. For example, if the mens 10000m race winner also broke a record, and this was noted on the visualisation, this would demonstrate that the entire field performed at an exceptional level. The original visualisation shows a significant gap between the gold medal winners and the rest of the pack in the womens 800m run and 100m freestyle. However, it is not communicated whether or not these races were won with record setting times with blistering performances, leaving the rest of the competition behind. This is vital contextual information that may completely alter a readers interpretation of the visualisation. To fix this problem, I will include records in the visualisation, highlighting the performances that were classed as either Olympic or world records.
+
+## Reconstruct
+### Code
+
+The following code was used to improve the original. 
+
+Data has been obtained through the official Olympic website (International Olympic Committee 2024). Some results for swimming were not available on the Olympics Games website, therefore some swimming results were obtained through the World Aquatics website (Formerly known as FINA) which is the world governing body for aquatic sports (World Aquatics, 2024). Data was manually input as there were no downloadable source files. This was an iterative process going in chronological order, extracting relevant track and swim events from the four most recent Olympics. 
+
+#### Data Loading for London 2012 track events
+(International Olympic Committee, 2012)
+```{r}
+library(tibble)
+
+# Data for London 2012 track events
+
+london2012track <- tribble(
+  ~City, ~Year, ~Event, ~Gender, ~Rank, ~Athlete, ~Country, ~Time, ~Record,
+  # Men's 800m
+  "London", 2012, "800m", "Men", 1, "David Rudisha", "KEN", "1:40.91", "WR",
+  "London", 2012, "800m", "Men", 2, "Nijel Amos",    "BOT", "1:41.73", NA,
+  "London", 2012, "800m", "Men", 3, "Timothy Kitum", "KEN", "1:42.53", NA,
+  "London", 2012, "800m", "Men", 4, "Duane Solomon", "USA", "1:42.82", NA,
+  "London", 2012, "800m", "Men", 5, "Nick Symmonds", "USA", "1:42.95", NA,
+  "London", 2012, "800m", "Men", 6, "Mohammed Aman", "ETH", "1:43.20", NA,
+  "London", 2012, "800m", "Men", 7, "Abubaker Kaki", "SUD", "1:43.32", NA,
+  "London", 2012, "800m", "Men", 8, "Andrew Osagie", "GBR", "1:43.77", NA,
+  
+  # Women's 800m (top 6 only, other athletes were disqualified or did not finish)
+  "London", 2012, "800m", "Women", 1, "Caster Semenya",            "RSA", "1:57.23", NA,
+  "London", 2012, "800m", "Women", 2, "Ekaterina Poistogova",      "RUS", "1:57.53", NA,
+  "London", 2012, "800m", "Women", 3, "Pamela Jelimo",             "KEN", "1:57.59", NA,
+  "London", 2012, "800m", "Women", 4, "Alysia Johnson Montaño",    "USA", "1:57.93", NA,
+  "London", 2012, "800m", "Women", 5, "Francine Niyonsaba",        "BDI", "1:59.63", NA,
+  "London", 2012, "800m", "Women", 6, "Janeth Jepkosgei Busienei", "KEN", "2:00.19", NA,
+  
+  # Men's 10,000m
+  "London", 2012, "10000m", "Men", 1, "Mo Farah",                  "GBR", "27:30.42", NA,
+  "London", 2012, "10000m", "Men", 2, "Galen Rupp",                "USA", "27:30.90", NA,
+  "London", 2012, "10000m", "Men", 3, "Tariku Bekele",             "ETH", "27:31.43", NA,
+  "London", 2012, "10000m", "Men", 4, "Kenenisa Bekele",           "ETH", "27:32.44", NA,
+  "London", 2012, "10000m", "Men", 5, "Bedan Karoki Muchiri",      "KEN", "27:32.94", NA,
+  "London", 2012, "10000m", "Men", 6, "Zersenay Tadese",           "ERI", "27:33.51", NA,
+  "London", 2012, "10000m", "Men", 7, "Teklemariam Medhin",        "ERI", "27:34.76", NA,
+  "London", 2012, "10000m", "Men", 8, "Gebregziabher Gebremariam", "ETH", "27:36.34", NA,
+  
+  # Women's 10,000m
+  "London", 2012, "10000m", "Women", 1, "Tirunesh Dibaba",  "ETH", "30:20.75", NA,
+  "London", 2012, "10000m", "Women", 2, "Sally Kipyego",    "KEN", "30:26.37", NA,
+  "London", 2012, "10000m", "Women", 3, "Vivian Cheruiyot", "KEN", "30:30.44", NA,
+  "London", 2012, "10000m", "Women", 4, "Werknesh Kidane",  "ETH", "30:39.38", NA,
+  "London", 2012, "10000m", "Women", 5, "Beleynesh Oljira", "ETH", "30:45.56", NA,
+  "London", 2012, "10000m", "Women", 6, "Shitaye Eshete",   "BRN", "30:47.25", NA,
+  "London", 2012, "10000m", "Women", 7, "Joanne Pavey",     "GBR", "30:53.20", NA,
+  "London", 2012, "10000m", "Women", 8, "Julia Bleasdale",  "GBR", "30:55.63", NA
+)
+
+head(london2012track)
+
+```
+#### Data Loading for London 2012 swim events
+(World Aquatics, 2012)
+```{r}
+london2012swim <- tribble(
+  ~City, ~Year, ~Event, ~Gender, ~Rank, ~Athlete,                   ~Country, ~Time,    ~Record,
+  # Mens 100m free
+  "London", 2012, "100m Freestyle", "Men", 1, "Nathan Adrian",          "USA", "47.52", NA,
+  "London", 2012, "100m Freestyle", "Men", 2, "James Magnussen",        "AUS", "47.53", NA,
+  "London", 2012, "100m Freestyle", "Men", 3, "Brent Hayden",           "CAN", "47.80", NA,
+  "London", 2012, "100m Freestyle", "Men", 4, "Yannick Agnel",          "FRA", "47.84", NA,
+  "London", 2012, "100m Freestyle", "Men", 5, "Sebastiaan Verschuren",  "NED", "47.88", NA,
+  "London", 2012, "100m Freestyle", "Men", 6, "César Cielo Filho",      "BRA", "47.92", NA,
+  "London", 2012, "100m Freestyle", "Men", 7, "Hanser Garcia Hernandez","CUB", "48.04", NA,
+  "London", 2012, "100m Freestyle", "Men", 8, "Nikita Lobintsev",       "RUS", "48.44", NA,
+  
+  # Womens 100m free
+  "London", 2012, "100m Freestyle", "Women", 1, "Ranomi Kromowidjojo",     "NED", "53.00", "OR",
+  "London", 2012, "100m Freestyle", "Women", 2, "Aliaksandra Herasimenia", "BLR", "53.38", NA,
+  "London", 2012, "100m Freestyle", "Women", 2, "Yi Tang",                 "CHN", "53.38", NA,
+  "London", 2012, "100m Freestyle", "Women", 4, "Melanie Schlanger",       "AUS", "53.44", NA,
+  "London", 2012, "100m Freestyle", "Women", 5, "Missy Franklin",          "USA", "53.47", NA,
+  "London", 2012, "100m Freestyle", "Women", 6, "Francesca Halsall",       "GBR", "53.64", NA,
+  "London", 2012, "100m Freestyle", "Women", 7, "Jeanette Ottesen",        "DEN", "53.66", NA,
+  "London", 2012, "100m Freestyle", "Women", 8, "Jessica Hardy",           "USA", "54.02", NA,
+  
+  # Mens 1500m free
+  "London", 2012, "1500m Freestyle", "Men", 1, "Yang Sun",          "CHN", "14:31.02", "WR",
+  "London", 2012, "1500m Freestyle", "Men", 2, "Ryan Cochrane",     "CAN", "14:39.63", NA,
+  "London", 2012, "1500m Freestyle", "Men", 3, "Oussama Mellouli",  "TUN", "14:40.31", NA,
+  "London", 2012, "1500m Freestyle", "Men", 4, "Taehwan Park",      "KOR", "14:50.61", NA,
+  "London", 2012, "1500m Freestyle", "Men", 5, "Gregorio Paltrinieri", "ITA", "14:51.92", NA,
+  "London", 2012, "1500m Freestyle", "Men", 6, "Connor Jaeger",     "USA", "14:52.99", NA,
+  "London", 2012, "1500m Freestyle", "Men", 7, "Mateusz Sawrymowicz", "POL", "14:54.32", NA,
+  "London", 2012, "1500m Freestyle", "Men", 8, "Daniel Fogg",       "GBR", "15:00.76", NA,
+  
+  # Womens 1500m free did not exist until 2020 tokyo olympics
+)
+
+# View
+head(london2012swim)
+
+```
+#### Data Loading for Rio 2016 track events
+(International Olympic Committee, 2016)
+```{r}
+rio2016track <- tribble(
+  ~City, ~Year, ~Event, ~Gender, ~Rank, ~Athlete, ~Country, ~Time, ~Record,
+  # Mens 800m
+  "Rio", 2016, "800m", "Men", 1, "Daniel Rudisha",               "KEN", "1:42.15", NA,
+  "Rio", 2016, "800m", "Men", 2, "Taoufik Makhloufi",           "ALG", "1:42.61", NA,
+  "Rio", 2016, "800m", "Men", 3, "Clayton Murphy",              "USA", "1:42.93", NA,
+  "Rio", 2016, "800m", "Men", 4, "Pierre-Ambroise Bosse",       "FRA", "1:43.41", NA,
+  "Rio", 2016, "800m", "Men", 5, "Ferguson Cheruiyot Rotich",   "KEN", "1:43.55", NA,
+  "Rio", 2016, "800m", "Men", 6, "Marcin Lewandowski",          "POL", "1:44.20", NA,
+  "Rio", 2016, "800m", "Men", 7, "Alfred Kipketer",             "KEN", "1:46.02", NA,
+  "Rio", 2016, "800m", "Men", 8, "Boris Berian",                "USA", "1:46.15", NA,
+  
+  # Womens 800m
+  "Rio", 2016, "800m", "Women", 1, "Caster Semenya",                 "RSA", "1:55.28", NA,
+  "Rio", 2016, "800m", "Women", 2, "Francine Niyonsaba",             "BDI", "1:56.49", NA,
+  "Rio", 2016, "800m", "Women", 3, "Margaret Nyairera Wambui",       "KEN", "1:56.89", NA,
+  "Rio", 2016, "800m", "Women", 4, "Melissa Bishop",                 "CAN", "1:57.02", NA,
+  "Rio", 2016, "800m", "Women", 5, "Joanna Jozwik",                  "POL", "1:57.37", NA,
+  "Rio", 2016, "800m", "Women", 6, "Lynsey Sharp",                   "GBR", "1:57.69", NA,
+  "Rio", 2016, "800m", "Women", 7, "Marina Arzamasova",              "BLR", "1:59.10", NA,
+  "Rio", 2016, "800m", "Women", 8, "Kate Grace",                     "USA", "1:59.57", NA,
+  
+  # Mens 10000m
+  "Rio", 2016, "10000m", "Men", 1, "Mo Farah",                         "GBR",    "27:05.17",   NA,
+  "Rio", 2016, "10000m", "Men", 2, "Paul Kipngetich Tanui",            "KEN",    "27:05.64",   NA,
+  "Rio", 2016, "10000m", "Men", 3, "Tamirat Tola",                     "ETH",    "27:06.26",   NA,
+  "Rio", 2016, "10000m", "Men", 4, "Yigrem Demelash",                  "ETH",    "27:06.27",   NA,
+  "Rio", 2016, "10000m", "Men", 5, "Galen Rupp",                       "USA",    "27:08.92",   NA,
+  "Rio", 2016, "10000m", "Men", 6, "Joshua Kiprui Cheptegei",          "UGA",    "27:10.06",   NA,
+  "Rio", 2016, "10000m", "Men", 7, "Bedan Karoki Muchiri",             "KEN",    "27:22.93",   NA,
+  "Rio", 2016, "10000m", "Men", 8, "Zersenay Tadese",                  "ERI",    "27:23.86",   NA,
+  
+  # Womens 10000m
+  "Rio", 2016, "10000m", "Women", 1, "Almaz Ayana",              "ETH", "29:17.45", "WR",
+  "Rio", 2016, "10000m", "Women", 2, "Vivian Cheruiyot",         "KEN", "29:32.53", NA,
+  "Rio", 2016, "10000m", "Women", 3, "Tirunesh Dibaba",          "ETH", "29:42.56", NA,
+  "Rio", 2016, "10000m", "Women", 4, "Alice Aprot Nawowuna",     "KEN", "29:53.51", NA,
+  "Rio", 2016, "10000m", "Women", 5, "Betsy Saina",              "KEN", "30:07.78", NA,
+  "Rio", 2016, "10000m", "Women", 6, "Molly Huddle",             "USA", "30:13.17", NA,
+  "Rio", 2016, "10000m", "Women", 7, "Yasemin Can",              "TUR", "30:26.41", NA,
+  "Rio", 2016, "10000m", "Women", 8, "Gelete Burka",             "ETH", "30:26.66", NA
+)
+
+head(rio2016track)
+```
+#### Data Loading for Rio 2016 swim events
+(International Olympic Committee, 2016)
+```{r}
+rio2016swim <- tribble(
+  ~City, ~Year, ~Event, ~Gender, ~Rank, ~Athlete, ~Country, ~Time, ~Record,
+# Mens 100m free
+  "Rio", 2016, "100m Freestyle", "Men", 1, "Kyle Chalmers",       "AUS", "47.58", NA,
+  "Rio", 2016, "100m Freestyle", "Men", 2, "Pieter Timmers",      "BEL", "47.80", NA,
+  "Rio", 2016, "100m Freestyle", "Men", 3, "Nathan Adrian",       "USA", "47.85", NA,
+  "Rio", 2016, "100m Freestyle", "Men", 4, "Santo Condorelli",    "CAN", "47.88", NA,
+  "Rio", 2016, "100m Freestyle", "Men", 5, "Duncan Scott",        "GBR", "48.01", NA,
+  "Rio", 2016, "100m Freestyle", "Men", 6, "Caeleb Dressel",      "USA", "48.02", NA,
+  "Rio", 2016, "100m Freestyle", "Men", 7, "Cameron McEvoy",      "AUS", "48.12", NA,
+  "Rio", 2016, "100m Freestyle", "Men", 8, "Marcelo Chierighini", "BRA", "48.41", NA,
+# Womens 100m free
+  "Rio", 2016, "100m Freestyle", "Women", 1, "Simone Manuel",        "USA", "52.70", "OR",
+  "Rio", 2016, "100m Freestyle", "Women", 1, "Penny Oleksiak",        "CAN", "52.70", "OR",
+  "Rio", 2016, "100m Freestyle", "Women", 3, "Sarah Sjöström",        "SWE", "52.99", NA,
+  "Rio", 2016, "100m Freestyle", "Women", 4, "Bronte Campbell",       "AUS", "53.04", NA,
+  "Rio", 2016, "100m Freestyle", "Women", 5, "Ranomi Kromowidjojo",   "NED", "53.08", NA,
+  "Rio", 2016, "100m Freestyle", "Women", 6, "Cate Campbell",         "AUS", "53.24", NA,
+  "Rio", 2016, "100m Freestyle", "Women", 7, "Abbey Weitzeil",        "USA", "53.30", NA,
+  "Rio", 2016, "100m Freestyle", "Women", 8, "Jeanette Ottesen",      "DEN", "53.36", NA,
+# Mens 1500m free
+  "Rio", 2016, "1500m Freestyle", "Men", 1, "Gregorio Paltrinieri",   "ITA", "14:34.57", NA,
+  "Rio", 2016, "1500m Freestyle", "Men", 2, "Connor Jaeger",          "USA", "14:39.48", NA,
+  "Rio", 2016, "1500m Freestyle", "Men", 3, "Gabriele Detti",         "ITA", "14:40.86", NA,
+  "Rio", 2016, "1500m Freestyle", "Men", 4, "Jordan Wilimovsky",      "USA", "14:45.03", NA,
+  "Rio", 2016, "1500m Freestyle", "Men", 5, "Mack Horton",            "AUS", "14:49.54", NA,
+  "Rio", 2016, "1500m Freestyle", "Men", 6, "Ryan Cochrane",          "CAN", "14:49.61", NA,
+  "Rio", 2016, "1500m Freestyle", "Men", 7, "Damien Joly",            "FRA", "14:52.73", NA,
+  "Rio", 2016, "1500m Freestyle", "Men", 8, "Henrik Christiansen",    "NOR", "15:02.66", NA
+)
+# Womens 1500m free did not exist until 2020 tokyo olympics
+head(rio2016swim)
+
+```
+#### Data Loading for Tokyo 2020(2021) track events
+(International Olympic Committee, 2020)
+```{r}
+tokyo2020track <- tribble(
+  ~City, ~Year, ~Event, ~Gender, ~Rank, ~Athlete, ~Country, ~Time, ~Record,
+  # Mens 10000m 
+  "Tokyo", 2020, "10000m", "Men", 1, "Selemon Barega",             "ETH",    "27:43.22",  NA,
+  "Tokyo", 2020, "10000m", "Men", 2, "Joshua Kiprui Cheptegei",    "UGA",    "27:43.63",  NA,
+  "Tokyo", 2020, "10000m", "Men", 3, "Jacob Kiplimo",              "UGA",    "27:43.88",  NA,
+  "Tokyo", 2020, "10000m", "Men", 4, "Berihu Aregawi",             "ETH",    "27:46.16",  NA,
+  "Tokyo", 2020, "10000m", "Men", 5, "Grant Fisher",               "USA",    "27:46.39",  NA,
+  "Tokyo", 2020, "10000m", "Men", 6, "Mohammed Ahmed",             "CAN",    "27:47.76",  NA,
+  "Tokyo", 2020, "10000m", "Men", 7, "Rodgers Kwemoi",             "KEN",    "27:50.06",  NA,
+  "Tokyo", 2020, "10000m", "Men", 8, "Yomif Kejelcha",             "ETH",    "27:52.03",  NA,
+  
+  # Womens 10000m
+  "Tokyo", 2020, "10000m", "Women", 1, "Sifan Hassan",              "NED", "29:55.32", NA,
+  "Tokyo", 2020, "10000m", "Women", 2, "Kalkidan Gezahegne",         "BRN", "29:56.18", NA,
+  "Tokyo", 2020, "10000m", "Women", 3, "Letesenbet Gidey",           "ETH", "30:01.72", NA,
+  "Tokyo", 2020, "10000m", "Women", 4, "Hellen Onsando Obiri",       "KEN", "30:24.27", NA,
+  "Tokyo", 2020, "10000m", "Women", 5, "Francine Niyonsaba",         "BDI", "30:41.93", NA,
+  "Tokyo", 2020, "10000m", "Women", 6, "Irene Chepet Cheptai",       "KEN", "30:44.00", NA,
+  "Tokyo", 2020, "10000m", "Women", 7, "Ririka Hironaka",            "JPN", "31:00.71", NA,
+  "Tokyo", 2020, "10000m", "Women", 8, "Konstanze Klosterhalfen",    "GER", "31:01.97", NA,
+  
+  # Mens 800m
+  "Tokyo", 2020, "800m", "Men", 1, "Emmanuel Kipkurui Korir",      "KEN", "1:45.06", NA,
+  "Tokyo", 2020, "800m", "Men", 2, "Ferguson Cheruiyot Rotich",    "KEN", "1:45.23", NA,
+  "Tokyo", 2020, "800m", "Men", 3, "Patryk Dobek",                 "POL", "1:45.39", NA,
+  "Tokyo", 2020, "800m", "Men", 4, "Peter Bol",                    "AUS", "1:45.92", NA,
+  "Tokyo", 2020, "800m", "Men", 5, "Adrian Ben",                   "ESP", "1:45.96", NA,
+  "Tokyo", 2020, "800m", "Men", 6, "Amel Tuka",                    "BIH", "1:45.98", NA,
+  "Tokyo", 2020, "800m", "Men", 7, "Gabriel Tual",                 "FRA", "1:46.03", NA,
+  "Tokyo", 2020, "800m", "Men", 8, "Nijel Amos",                   "BOT", "1:46.41", NA,
+  
+  # Womens 800m'
+  "Tokyo", 2020, "800m", "Women", 1, "Athing Mu",          "USA", "1:55.21", NA,
+  "Tokyo", 2020, "800m", "Women", 2, "Keely Hodgkinson",    "GBR", "1:55.88", NA,
+  "Tokyo", 2020, "800m", "Women", 3, "Raevyn Rogers",       "USA", "1:56.81", NA,
+  "Tokyo", 2020, "800m", "Women", 4, "Jemma Reekie",        "GBR", "1:56.90", NA,
+  "Tokyo", 2020, "800m", "Women", 5, "Chunyu Wang",         "CHN", "1:57.00", NA,
+  "Tokyo", 2020, "800m", "Women", 6, "Habitamu Alemu",      "ETH", "1:57.56", NA,
+  "Tokyo", 2020, "800m", "Women", 7, "Alexandra Bell",      "GBR", "1:57.66", NA,
+  "Tokyo", 2020, "800m", "Women", 8, "Natoya Goule",        "JAM", "1:58.26", NA
+)
+
+head(tokyo2020track)
+  
+```
+#### Data Loading for Tokyo 2020(2021) swim events
+(International Olympic Committee, 2020)
+```{r}
+tokyo2020swim <- tribble(
+  ~City, ~Year, ~Event, ~Gender, ~Rank, ~Athlete, ~Country, ~Time, ~Record,
+  # Mens 100m free
+  "Tokyo", 2020, "100m Freestyle", "Men", 1, "Caeleb Dressel",       "USA", "47.02", NA,
+  "Tokyo", 2020, "100m Freestyle", "Men", 2, "Kyle Chalmers",        "AUS", "47.08", NA,
+  "Tokyo", 2020, "100m Freestyle", "Men", 3, "Kliment Kolesnikov",   "ROC", "47.44", NA,
+  "Tokyo", 2020, "100m Freestyle", "Men", 4, "Maxime Grousset",      "FRA", "47.72", NA,
+  "Tokyo", 2020, "100m Freestyle", "Men", 5, "Sunwoo Hwang",         "KOR", "47.82", NA,
+  "Tokyo", 2020, "100m Freestyle", "Men", 6, "Alessandro Miressi",   "ITA", "47.86", NA,
+  "Tokyo", 2020, "100m Freestyle", "Men", 7, "David Popovici",       "ROU", "48.04", NA,
+  "Tokyo", 2020, "100m Freestyle", "Men", 8, "Nandor Nemeth",        "HUN", "48.10", NA,
+  
+  # Womens 100m free
+  "Tokyo", 2020, "100m Freestyle", "Women", 1, "Emma McKeon",                "AUS", "51.96", NA,
+  "Tokyo", 2020, "100m Freestyle", "Women", 2, "Siobhan Bernadette Haughey", "HKG", "52.27", NA,
+  "Tokyo", 2020, "100m Freestyle", "Women", 3, "Cate Campbell",              "AUS", "52.52", NA,
+  "Tokyo", 2020, "100m Freestyle", "Women", 4, "Penny Oleksiak",             "CAN", "52.59", NA,
+  "Tokyo", 2020, "100m Freestyle", "Women", 5, "Sarah Sjöström",             "SWE", "52.68", NA,
+  "Tokyo", 2020, "100m Freestyle", "Women", 6, "Femke Heemskerk",            "NED", "52.79", NA,
+  "Tokyo", 2020, "100m Freestyle", "Women", 7, "Anna Hopkin",                "GBR", "52.83", NA,
+  "Tokyo", 2020, "100m Freestyle", "Women", 8, "Abbey Weitzeil",             "USA", "53.23", NA,
+  
+  # Mens 1500m free
+  "Tokyo", 2020, "1500m Freestyle", "Men", 1, "Robert Finke",           "USA", "14:39.65", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Men", 2, "Mykhailo Romanchuk",     "UKR", "14:40.66", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Men", 3, "Florian Wellbrock",      "GER", "14:40.91", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Men", 4, "Gregorio Paltrinieri",   "ITA", "14:45.01", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Men", 5, "Daniel Jervis",          "GBR", "14:55.48", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Men", 6, "Kirill Martynychev",     "ROC", "14:55.85", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Men", 7, "Felix Auböck",           "AUT", "15:03.47", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Men", 8, "Serhii Frolov",          "UKR", "15:04.26", NA,
+  
+  # Womens 1500m free
+  "Tokyo", 2020, "1500m Freestyle", "Women", 1, "Katie Ledecky",           "USA", "15:37.34", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Women", 2, "Erica Sullivan",          "USA", "15:41.41", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Women", 3, "Sarah Köhler",             "GER", "15:42.91", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Women", 4, "Jianjiahe Wang",           "CHN", "15:46.37", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Women", 5, "Simona Quadarella",        "ITA", "15:53.97", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Women", 6, "Kiah Melverton",           "AUS", "16:00.36", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Women", 7, "Anastasiia Kirpichnikova", "ROC", "16:00.38", NA,
+  "Tokyo", 2020, "1500m Freestyle", "Women", 8, "Maddy Gough",              "AUS", "16:05.81", NA
+)
+  
+head(tokyo2020swim)
+  
+```
+#### Data Loading for Paris 2024 track events
+(International Olympic Committee, 2024)
+```{r}
+paris2024track <- tribble(
+  ~City, ~Year, ~Event, ~Gender, ~Rank, ~Athlete, ~Country, ~Time, ~Record,
+  # Mens 800m
+  "Paris", 2024, "800m", "Men", 1, "Emmanuel Wanyonyi",      "KEN", "1:41.19", NA,
+  "Paris", 2024, "800m", "Men", 2, "Marco Arop",              "CAN", "1:41.20", NA,
+  "Paris", 2024, "800m", "Men", 3, "Djamel Sedjati",          "ALG", "1:41.50", NA,
+  "Paris", 2024, "800m", "Men", 4, "Bryce Hoppel",            "USA", "1:41.67", NA,
+  "Paris", 2024, "800m", "Men", 5, "Mohamed Attaoui",         "ESP", "1:42.08", NA,
+  "Paris", 2024, "800m", "Men", 6, "Gabriel Tual",            "FRA", "1:42.14", NA,
+  "Paris", 2024, "800m", "Men", 7, "Tshepiso Masalela",       "BOT", "1:42.82", NA,
+  "Paris", 2024, "800m", "Men", 8, "Max Burgin",              "GBR", "1:43.84", NA,
+  
+  # Womens 800m
+  "Paris", 2024, "800m", "Women", 1, "Keely Hodgkinson",    "GBR", "1:56.72", NA,
+  "Paris", 2024, "800m", "Women", 2, "Tsige Duguma",         "ETH", "1:57.15", NA,
+  "Paris", 2024, "800m", "Women", 3, "Mary Moraa",           "KEN", "1:57.42", NA,
+  "Paris", 2024, "800m", "Women", 4, "Shafiqua Maloney",     "VIN", "1:57.66", NA,
+  "Paris", 2024, "800m", "Women", 5, "Renelle Lamote",       "FRA", "1:58.19", NA,
+  "Paris", 2024, "800m", "Women", 6, "Worknesh Mesele",      "ETH", "1:58.28", NA,
+  "Paris", 2024, "800m", "Women", 7, "Juliette Whittaker",   "USA", "1:58.50", NA,
+  "Paris", 2024, "800m", "Women", 8, "Prudence Sekgodiso",   "RSA", "1:58.79", NA,
+  
+  # Mens 10000m
+  "Paris", 2024, "10000m", "Men", 1, "Joshua Kiprui Cheptegei",     "UGA",    "26:43.14", NA,
+  "Paris", 2024, "10000m", "Men", 2, "Berihu Aregawi",              "ETH",    "26:43.44", NA,
+  "Paris", 2024, "10000m", "Men", 3, "Grant Fisher",                "USA",    "26:43.46", NA,
+  "Paris", 2024, "10000m", "Men", 4, "Mohammed Ahmed",              "CAN",    "26:43.79", NA,
+  "Paris", 2024, "10000m", "Men", 5, "Benard Kibet",                "KEN",    "26:43.98", NA,
+  "Paris", 2024, "10000m", "Men", 6, "Yomif Kejelcha",              "ETH",    "26:44.02", NA,
+  "Paris", 2024, "10000m", "Men", 7, "Selemon Barega",              "ETH",    "26:44.48", NA,
+  "Paris", 2024, "10000m", "Men", 8, "Jacob Kiplimo",               "UGA",    "26:46.39", NA,
+  
+  # Womens 10000m
+  "Paris", 2024, "10000m", "Women", 1, "Beatrice Chebet",             "KEN", "30:43.25", NA,
+  "Paris", 2024, "10000m", "Women", 2, "Nadia Battocletti",            "ITA", "30:43.35", NA,
+  "Paris", 2024, "10000m", "Women", 3, "Sifan Hassan",                 "NED", "30:44.12", NA,
+  "Paris", 2024, "10000m", "Women", 4, "Margaret Chelimo Kipkemboi",   "KEN", "30:44.58", NA,
+  "Paris", 2024, "10000m", "Women", 5, "Lilian Kasait Rengeruk",       "KEN", "30:45.04", NA,
+  "Paris", 2024, "10000m", "Women", 6, "Gudaf Tsegay",                 "ETH", "30:45.21", NA,
+  "Paris", 2024, "10000m", "Women", 7, "Fotyen Tesfay",                "ETH", "30:46.93", NA,
+  "Paris", 2024, "10000m", "Women", 8, "Weini Kelati Frezghi",         "USA", "30:49.98", NA
+)
+head(paris2024track)
+```
+#### Data Loading for Paris 2024 swim events
+(International Olympic Committee, 2024)
+```{r}
+paris2024swim <- tribble(
+  ~City, ~Year, ~Event, ~Gender, ~Rank, ~Athlete, ~Country, ~Time, ~Record,
+  # Mens 100m free
+  "Paris", 2024, "100m Freestyle", "Men", 1, "Zhanle Pan",        "CHN", "46.40", NA,
+  "Paris", 2024, "100m Freestyle", "Men", 2, "Kyle Chalmers",     "AUS", "47.48", NA,
+  "Paris", 2024, "100m Freestyle", "Men", 3, "David Popovici",    "ROU", "47.49", NA,
+  "Paris", 2024, "100m Freestyle", "Men", 4, "Nandor Nemeth",     "HUN", "47.50", NA,
+  "Paris", 2024, "100m Freestyle", "Men", 5, "Maxime Grousset",   "FRA", "47.71", NA,
+  "Paris", 2024, "100m Freestyle", "Men", 6, "Josha Salchow",     "GER", "47.80", NA,
+  "Paris", 2024, "100m Freestyle", "Men", 7, "Jack Alexy",        "USA", "47.96", NA,
+  "Paris", 2024, "100m Freestyle", "Men", 8, "Chris Giuliano",    "USA", "47.98", NA,
+  
+  # Womens 100m free
+  "Paris", 2024, "100m Freestyle", "Women", 1, "Sarah Sjöström",                "SWE", "52.16", NA,
+  "Paris", 2024, "100m Freestyle", "Women", 2, "Torri Huske",                   "USA", "52.29", NA,
+  "Paris", 2024, "100m Freestyle", "Women", 3, "Siobhan Bernadette Haughey",     "HKG", "52.33", NA,
+  "Paris", 2024, "100m Freestyle", "Women", 4, "Mollie O'Callaghan",             "AUS", "52.34", NA,
+  "Paris", 2024, "100m Freestyle", "Women", 5, "Shayna Jack",                   "AUS", "52.72", NA,
+  "Paris", 2024, "100m Freestyle", "Women", 6, "Junxuan Yang",                  "CHN", "52.82", NA,
+  "Paris", 2024, "100m Freestyle", "Women", 7, "Marrit Steenbergen",            "NED", "52.83", NA,
+  "Paris", 2024, "100m Freestyle", "Women", 8, "Gretchen Walsh",                "USA", "53.04", NA,
+  
+  # Mens 1500m free
+  "Paris", 2024, "1500m Freestyle", "Men", 1, "Robert Finke",          "USA", "14:30.67", NA,
+  "Paris", 2024, "1500m Freestyle", "Men", 2, "Gregorio Paltrinieri",  "ITA", "14:34.55", NA,
+  "Paris", 2024, "1500m Freestyle", "Men", 3, "Daniel Wiffen",         "IRL", "14:39.63", NA,
+  "Paris", 2024, "1500m Freestyle", "Men", 4, "David Bethlehem",       "HUN", "14:40.91", NA,
+  "Paris", 2024, "1500m Freestyle", "Men", 5, "Kuzey Tuncelli",         "TUR", "14:41.22", NA,
+  "Paris", 2024, "1500m Freestyle", "Men", 6, "Ahmed Jaouadi",          "TUN", "14:43.35", NA,
+  "Paris", 2024, "1500m Freestyle", "Men", 7, "David Aubry",            "FRA", "14:44.66", NA,
+  "Paris", 2024, "1500m Freestyle", "Men", 8, "Damien Joly",            "FRA", "14:52.61", NA,
+
+  
+  # Womens 1500m free
+  "Paris", 2024, "1500m Freestyle", "Women", 1, "Katie Ledecky",              "USA", "15:30.02", NA,
+  "Paris", 2024, "1500m Freestyle", "Women", 2, "Anastasiia Kirpichnikova",   "FRA", "15:40.35", NA,
+  "Paris", 2024, "1500m Freestyle", "Women", 3, "Isabel Gose",                "GER", "15:41.16", NA,
+  "Paris", 2024, "1500m Freestyle", "Women", 4, "Simona Quadarella",          "ITA", "15:44.05", NA,
+  "Paris", 2024, "1500m Freestyle", "Women", 5, "Bingjie Li",                 "CHN", "16:01.03", NA,
+  "Paris", 2024, "1500m Freestyle", "Women", 6, "Moesha Johnson",             "AUS", "16:02.70", NA,
+  "Paris", 2024, "1500m Freestyle", "Women", 7, "Beatriz Pimentel Dizotti",   "BRA", "16:02.86", NA,
+  "Paris", 2024, "1500m Freestyle", "Women", 8, "Leonie Martens",             "GER", "16:12.57", NA
+
+)
+
+head(paris2024swim)
+```
+
+### Combining Data and Additional Feature Engineering
+
+As the original data does not contain the percentage margin between athletes, this primary feature included in the original visualisation needed to be engineered. Additionally, for visualisation purposes, other features required some adjustment and engineering for presentation purposes.
+
+```{r}
+library(dplyr)
+
+# Compile all results into one main data frame
+olympic_results <- bind_rows(
+  london2012track,
+  london2012swim,
+  rio2016track,
+  rio2016swim,
+  tokyo2020track,
+  tokyo2020swim,
+  paris2024track,
+  paris2024swim
+)
+
+# Check frame
+head(olympic_results)
+# Look at data types
+glimpse(olympic_results)
+
+# Check missing values
+colSums(is.na(olympic_results)) # There are NA values in the records column as expected
+
+# Change data types accordingly
+olympic_results <- olympic_results %>%
+  mutate(
+    City = as.factor(City),
+    Year = as.factor(Year),
+    Event = as.factor(Event),
+    Gender = as.factor(Gender),
+    Country = as.factor(Country),
+    Record = as.factor(Record)
+  )
+
+# Create function to convert time to seconds (Time has been entered as strings)
+convert_time_to_seconds <- function(time_string) {
+  if (is.na(time_string)) { # Create case for if time is null value
+    return(NA)
+  }
+  if (grepl(":", time_string)) {# Case for events lasting >1min
+    parts <- strsplit(time_string, ":")[[1]] # Split the string by colon
+    minutes <- as.numeric(parts[1]) # First part of string is the minutes (convert to numeric)
+    seconds <- as.numeric(parts[2]) # Second part of string is seconds (convert to numeric)
+    total_seconds <- minutes * 60 + seconds # multiply minutes by 60 to get seconds and add seconds
+  } else { # Case for when time < 1min
+    total_seconds <- as.numeric(time_string) # Convert to numeric
+  }
+  return(total_seconds) # Return total_seconds
+}
+
+# Create new column of time in seconds for to calculate percent behind
+olympic_results <- olympic_results %>%
+  mutate(Time_seconds = sapply(Time, convert_time_to_seconds)) %>% # Apply newly created function
+  group_by(City, Year, Event, Gender) %>% # In order to extract the winner for each event, we need to ensure we are selecting times for only one event
+  mutate(
+    Winner_time = min(Time_seconds, na.rm = TRUE), # Create a new column of winner times (min = fastest time)
+    Percent_behind = 100 * (Time_seconds - Winner_time) / Winner_time # Create a new column of % behind which will be used for visualisation
+  ) %>%
+  ungroup() # ungroup
+
+olympic_results <- olympic_results %>% # Join Olympics and Year for labelling in visualisation
+  mutate(
+      Olympics_Label = paste(City, Year, sep = "\n"),
+      Olympics_Label = factor(Olympics_Label, 
+        levels = c(  # Add factorisation to ensure order is applied when visualising
+          "London\n2012",
+          "Rio\n2016",
+          "Tokyo\n2020",
+          "Paris\n2024")))
+
+olympic_results <- olympic_results %>% 
+  mutate(Event = factor(Event, levels = c(  # Add factorisation to ensure order is applied when visualising
+    "800m",
+    "10000m",
+    "100m Freestyle",
+    "1500m Freestyle"
+  )))
+
+olympic_results <- olympic_results %>% # Add a new variable 'sport' this is done to add a background colour later according to sport making the visualisation more intuitive to read
+  mutate(
+    Sport = case_when(
+      Event %in% c("800m", "10000m") ~ "Track",
+      Event %in% c("100m Freestyle", "1500m Freestyle") ~ "Swimming"
+    )
+  )
+
+olympic_results <- olympic_results %>% # Convert to factor for visualisation
+  mutate(
+    Sport = as.factor(Sport))
+
+# Same for records
+olympic_results$RecordType <- factor(olympic_results$Record, levels = c("WR", "OR"))
+
+olympic_results$RecordType <- case_when( # Create new variable for labelling/legend in visualisation
+  olympic_results$Record == "WR" ~ "World Record",
+  olympic_results$Record == "OR" ~ "Olympic Record",
+  TRUE ~ NA_character_ # all other cases 
+)
+
+olympic_results$Event <- recode( # Adjust labelling for better design in plot
+  olympic_results$Event,
+  "100m Freestyle" = "100m\nFreestyle",
+  "1500m Freestyle" = "1500m\nFreestyle"
+)
+
+olympic_results$Event <- recode( # Adjust labelling for better design in plot
+  olympic_results$Event,
+  "10000m" = "10000m\nRun",
+  "800m" = "800m\nRun"
+)
+
+panel_bg <- olympic_results %>% # Create a new data frame for facet/panel colour coding by sport
+  distinct(Event, Olympics_Label, Sport) %>% # Ensure every event is included
+  mutate(
+    xmin = -Inf, xmax = Inf, # Mandatory fields for geom_rect
+    ymin = -Inf, ymax = Inf, # Mandatory fields for geom_rect
+    bg_fill = ifelse(Sport == "Track", "#fbeee6", "#ebf5fb")  # Assign colour codes
+  )
+
+```
+### Plot Generation
+```{r}
+library(ggplot2)
+library(ggnewscale)
+
+# Plot
+p1 <- ggplot(olympic_results, aes(x = Percent_behind, y = Gender)) + 
+  facet_grid(Event ~ Olympics_Label, switch = "y") +
+
+  #Background rectangles (facet colouring based on sport)
+  geom_rect(data = panel_bg,
+    aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = bg_fill),
+    inherit.aes = FALSE,
+    color = NA,
+    alpha = 1
+  ) +
+  
+  # Ensures fill for geom_rect is kept as 'bg_fill' values and removes unnecessary legend
+  scale_fill_identity(guide = "none") + 
+  
+  # Adds "grid-lines". "Normal" method of adding gridlines was overlapped by geom_rect objects
+  geom_vline(
+    xintercept = seq(0, max(olympic_results$Percent_behind, na.rm = TRUE), by = 1),
+    color = "gray85",
+    size = 0.3
+  ) +
+  
+  # Used to be able to use scale_fill for multiple geoms
+  new_scale_fill() +
+  # Main gender-based points
+  geom_point(
+    aes(shape = Gender, fill = Gender),
+    size = 3,
+    alpha = 0.65,
+    stroke = NA,
+    position = position_dodge(width = 0.5)
+  ) +
+
+  # Diamonds for records
+  geom_point(
+    data = subset(olympic_results, !is.na(RecordType)), # Exclude all results without a record
+    aes(color = RecordType, shape = Gender),
+    shape = 23, # Diamond shape
+    alpha = 1,
+    size = 3.5,
+    stroke = 1.5,
+    fill = NA,
+    position = position_dodge(width = 0.5),
+    show.legend = TRUE
+  ) +
+
+  # Manual aesthetics
+  scale_shape_manual(values = c("Men" = 21, "Women" = 24)) +
+  
+  # Add manual colours for gender geoms
+  scale_fill_manual(name = "Gender", values = c("Men" = "#1f77b4", "Women" = "#d62728")) +
+  
+  # Add manual colours for record geoms
+  scale_color_manual(
+    name = "Record",
+    values = c("Olympic Record" = "#FF8C00", "World Record" = "#FFD700")
+  ) +
+
+  # Add labels
+  labs(
+    x = "Percent (Time) Behind 1st Place",
+    y = "",
+    title = "Margins of Victory in Olympic Finals:\nTop 8 Finishers by Gender",
+    caption = "*Womens 1500m freestyle
+                was not an event
+              in 2012 or 2016"
+  ) +
+  
+  # Add vertical line representing finish line - allows for more intuitive understanding of visualisation
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+  
+  # Add minimal theme
+  theme_minimal() +
+  
+  # Add manual theme elements
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), # adjust position and appearance of title
+    strip.text.x = element_text(face = "bold"), # Make Olympic Games 'bold'
+    strip.text.y.left = element_text(angle = 0, hjust = 1),
+    axis.text.y = element_blank(), # Remove gender text
+    panel.spacing = unit(1, "lines"), # Increase panel spacing to improve readability
+    legend.position = "right", # Position legend
+    plot.caption =  element_text(hjust = 1.41, vjust = 2, face = "italic", size = 8), # Adjust position and appearance of caption
+    axis.title.x = element_text(size = 12, margin = margin(t = 15)) # Adjust position and appearance of x-axis label
+  ) +
+  
+  # Stops geom objects near edge of facet plots being "clipped off"
+  coord_cartesian(clip = "off") +
+  
+  # Adjusts settings for legend
+  guides(
+    fill = guide_legend(order = 1, title = "Gender", override.aes = list(stroke = 0)), # Stops outline appearing on legend
+    shape = guide_legend(order = 1), # Stops legend appearing with additional gender information
+    color = guide_legend(order = 2, title = "Record", override.aes = list(shape = 23, fill = NA, stroke = 1.5, size = 3)) # adjusts Legend for records
+  )
+
+```
+### Reconstruction
+
+The following plot improves the original data visualisation in the three ways previously explained.
+
+```{r fig.align="center", echo = FALSE, out.width="100%"}
+p1
+```
+
+## References
+
+The reference to the original data visualisation chosen, the data source(s) used for the reconstruction and any other sources used for this project are as follows:
+
+* Joyner, M. J., Hunter, S. K., & Senefeld, J. W. (2025). Evidence on sex differences in sports performance. Journal of Applied Physiology, 138(1), 274-281. https://doi.org/10.1152/japplphysiol.00615.2024
+
+* International Olympic Committee. (2012) Athletics - Mens 800m results - London 2012 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/london-2012/results/athletics/800m-men
+
+* International Olympic Committee. (2012) Athletics - Womens 800m results - London 2012 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/london-2012/results/athletics/800m-women
+
+* International Olympic Committee. (2012) Athletics - Mens 10000m results - London 2012 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/london-2012/results/athletics/10000m-men
+
+* International Olympic Committee. (2012) Athletics - Womens 10000m results - London 2012 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/london-2012/results/athletics/10000m-women
+
+* World Aquatics. (2012) Olympics Games London 2012: Womens 100m freestyle - Results. https://www.worldaquatics.com/competitions/468/olympic-games-london-2012/results?disciplines=SW&event=1edf92f0-3581-4d36-b44a-ea20bcff3a9b
+
+* World Aquatics. (2012) Olympics Games London 2012: Mens 100m freestyle - Results.
+https://www.worldaquatics.com/competitions/468/olympic-games-london-2012/results?disciplines=SW&event=ef25ec47-7ba0-40ab-aa1e-b079501f524a
+
+* World Aquatics. (2012) Olympics Games London 2012: Mens 1500m freestyle - Results.
+https://www.worldaquatics.com/competitions/468/olympic-games-london-2012/results?disciplines=SW&event=82ad7fe7-0487-46e2-ae43-4f131c032524
+
+* International Olympic Committee. (2016) Athletics - Mens 800m results - Rio 2016 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/rio-2016/results/athletics/800m-men
+
+* International Olympic Committee. (2016) Athletics - Womens 800m results - Rio 2016 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/rio-2016/results/athletics/800m-women
+
+* International Olympic Committee. (2016) Athletics - Mens 10000m results - Rio 2016 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/rio-2016/results/athletics/10000m-men
+
+* International Olympic Committee. (2016) Athletics - Womens 10000m results - Rio 2016 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/rio-2016/results/athletics/10000m-women
+
+* World Aquatics. (2016) Olympics Games Rio 2016: Womens 100m freestyle - Results.
+https://www.worldaquatics.com/competitions/262/olympic-games-rio-2016/results?disciplines=SW&event=c1ef33bc-85c8-4f9e-bc04-ca09843f8851
+
+* World Aquatics. (2016) Olympics Games Rio 2016: Mens 100m freestyle - Results. https://www.worldaquatics.com/competitions/262/olympic-games-rio-2016/results?disciplines=SW&event=8da7743a-4aa1-4fd0-bbbf-3ac82e937dea
+
+* World Aquatics. (2016) Olympics Games Rio 2016: Mens 1500m freestyle - Results. https://www.worldaquatics.com/competitions/262/olympic-games-rio-2016/results?disciplines=SW&event=6e413752-772d-4491-993d-52cc2f573838
+
+* International Olympic Committee. (2020) Athletics - Mens 800m results - Tokyo 2020 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/tokyo-2020/results/athletics/men-s-800m
+
+* International Olympic Committee. (2020) Athletics - Womens 800m results - Tokyo 2020 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/tokyo-2020/results/athletics/women-s-800m
+
+* International Olympic Committee. (2020) Athletics - Mens 10000m results - Tokyo 2020 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/tokyo-2020/results/athletics/men-s-10000m
+
+* International Olympic Committee. (2020) Athletics - Womens 10000m results - Tokyo 2020 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/tokyo-2020/results/athletics/women-s-10000m
+
+* International Olympic Committee. (2020) Swimming - Mens 100m freestyle results - Tokyo 2020 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/tokyo-2020/results/swimming/men-s-100m-freestyle
+
+* International Olympic Committee. (2020) Swimming - Womens 100m freestyle results - Tokyo 2020 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/tokyo-2020/results/swimming/women-s-100m-freestyle
+
+* International Olympic Committee. (2020) Swimming - Mens 1500m freestyle results - Tokyo 2020 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/tokyo-2020/results/swimming/men-s-1500m-freestyle
+
+* International Olympic Committee. (2020) Swimming - Womens 1500m freestyle results - Tokyo 2020 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/tokyo-2020/results/swimming/women-s-1500m-freestyle
+
+* International Olympic Committee. (2024) Athletics - Mens 800m results - Paris 2024 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/paris-2024/results/athletics/men-800m
+
+* International Olympic Committee. (2024) Athletics - Womens 800m results - Paris 2024 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/paris-2024/results/athletics/women-800m
+
+* International Olympic Committee. (2024) Athletics - Mens 10000m results - Paris 2024 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/paris-2024/results/athletics/men-10-000m
+
+* International Olympic Committee. (2024) Athletics - Womens 10000m results - Paris 2024 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/paris-2024/results/athletics/women-10-000m
+
+* International Olympic Committee. (2024) Swimming - Mens 100m freestyle results - Paris 2024 Olympics Games. Olympics.com.
+https://www.olympics.com/en/olympic-games/paris-2024/results/swimming/men-100m-freestyle
+
+* International Olympic Committee. (2024) Swimming - Womens 100m freestyle results - Paris 2024 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/paris-2024/results/swimming/women-100m-freestyle
+
+* International Olympic Committee. (2024) Swimming - Mens 1500m freestyle results - Paris 2024 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/paris-2024/results/swimming/men-1500m-freestyle
+
+* International Olympic Committee. (2024) Swimming - Womens 1500m freestyle results - Paris 2024 Olympics Games. Olympics.com. https://www.olympics.com/en/olympic-games/paris-2024/results/swimming/women-1500m-freestyle
